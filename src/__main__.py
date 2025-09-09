@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
 
-from llm_sdk import Small_LLM_Model
+# from llm_sdk import Small_LLM_Model
+from .inputs import FunctionDefinition, PromptItem, load_function_definitions, load_prompts
+
 
 def main() -> None:
-	try:
-		model = Small_LLM_Model(
-			model_name="Qwen/Qwen3-0.6B",
-			device="cpu",
-			dtype=None,
-		)
-		print(model.get_path_to_vocabulary_json())
-		
-	except Exception as e:
-		print(f"❌ エラーが発生しました: {e}")
-		return
+
+	function_definitions = load_function_definitions("data/exercise_input/functions_definition.json")
+	prompts = load_prompts("data/exercise_input/function_calling_tests.json")
+
+	print(function_definitions)
+	print(prompts)
+
+	return
 
 if __name__ == "__main__":
 	main()
