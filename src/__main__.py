@@ -40,9 +40,15 @@ def main() -> None:
 
 		# プロンプト構築（関数一覧＋質問＋JSON指示）
 		prompt_text = (
+			"You are a function selector. Read the available functions and the question, then respond ONLY with one JSON object.\n"
+			"- Output must be valid JSON with exactly two keys: fn_name (string) and args (object).\n"
+			"- Do NOT include any text before or after the JSON. No explanations.\n"
+			"- args must ALWAYS be a JSON object (even for a single argument). Use key-value pairs with the exact argument names.\n"
+			"- Example: {\"fn_name\": \"fn_add_numbers\", \"args\": {\"a\": 2.0, \"b\": 3.0}}\n"
+			"- If you cannot determine arguments, return an empty object for args.\n\n"
 			"Available functions:\n" + functions_catalog + "\n\n" +
 			"Question:\n" + item.prompt + "\n\n" +
-			"Respond ONLY as JSON with keys fn_name and args."
+			"Respond now with only the JSON."
 		)
 
 		print("生成されたプロンプト:")
