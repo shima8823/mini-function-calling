@@ -55,6 +55,10 @@ def main() -> None:
 
 		print("\nトークン生成中...")
 
+		json_start_flag = False
+		resource = 0
+		next_start = start_len
+
 		# 貪欲生成
 		for i in range(max_new_tokens):
 			logits = model.get_logits_from_input_ids(input_ids)
@@ -62,9 +66,17 @@ def main() -> None:
 			next_id = max(range(len(logits)), key=lambda i: logits[i])
 			input_ids.append(int(next_id))
 			# 簡易終了条件： '}' が出現したら停止
-			generated_text = model._decode(input_ids[start_len:])
-			# 
+			# 生成した分の文字列を線形探索する。jsonstartflag == true && 資源({})が0になったら停止
+			# TODO: O(n)なため改善する方法を調査
+			generated_text = model._decode(input_ids[next_start:])
+			next_start += 1
+			print("generated_text", generated_text)
+			if "{" in generated_text:
+				json_start_flag = True
+				resource += 1
 			if "}" in generated_text:
+				resource -= 1
+			if json_start_flag and resource == 0:
 				print(f"生成完了 ({i+1} トークン)")
 				break
 
