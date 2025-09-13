@@ -1,6 +1,7 @@
 project.md
-data
 llm_sdk
+input
+output
 
 # uv関連
 uv.lock
