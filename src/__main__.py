@@ -9,9 +9,9 @@ from pathlib import Path
 def main() -> None:
 	# 入力読み込み
 	base_path = Path(__file__).parent.parent
-	functions_path = base_path / "data" / "exercise_input" / "functions_definition.json"
-	prompts_path = base_path / "data" / "exercise_input" / "function_calling_tests.json"
-	results_dir = base_path / "results"
+	functions_path = base_path / "input" / "functions_definition.json"
+	prompts_path = base_path / "input" / "function_calling_tests.json"
+	results_dir = base_path / "output"
 	results_dir.mkdir(exist_ok=True)
 
 	function_definitions = load_function_definitions(functions_path)
