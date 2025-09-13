@@ -6,7 +6,9 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "huggingface-hub>=0.34.4",
-    "numpy>=2.3.2",
+    # torchが最新版では動作しないため低いバージョンを指定。
+	# その影響で、numpyは2.0以上でも動作はするがwarningsが出るため低いバージョンを指定。
+    "numpy>=1.26,<2",
     "pydantic>=2.11.7",
     "torch==2.2.2",
     "transformers>=4.56.0",
