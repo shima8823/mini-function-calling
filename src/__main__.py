@@ -71,11 +71,12 @@ def main() -> None:
 			generated_text = model._decode(input_ids[next_start:])
 			next_start += 1
 			print("generated_text", generated_text)
-			if "{" in generated_text:
-				json_start_flag = True
-				resource += 1
-			if "}" in generated_text:
-				resource -= 1
+			for char in generated_text:
+				if char == "{":
+					json_start_flag = True
+					resource += 1
+				elif char == "}":
+					resource -= 1
 			if json_start_flag and resource == 0:
 				print(f"生成完了 ({i+1} トークン)")
 				break
