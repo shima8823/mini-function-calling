@@ -1,4 +1,5 @@
-llm_sdk
+llm_sdk/*
+!llm_sdk/__init__.py
 input
 output
 AGENTS.md
