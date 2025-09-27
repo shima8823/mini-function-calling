@@ -16,4 +16,4 @@ clean:
 	rm -rf .pytest_cache
 
 lint:
-	uv run flake8 src/ tests/
+	uv run ruff check .
