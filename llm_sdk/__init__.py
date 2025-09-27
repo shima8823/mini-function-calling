@@ -12,6 +12,7 @@ from transformers import (
 
 logging.set_verbosity_error()
 
+
 class LightweightCausalLM:
     """A lightweight utility class for experimentation with small causal LMs."""
 
@@ -44,7 +45,6 @@ class LightweightCausalLM:
         for param in self._model.parameters():
             param.requires_grad = False
 
-    
     def _select_device(self, candidate: str | None = None) -> str:
         if candidate:
             return candidate
@@ -69,5 +69,5 @@ class LightweightCausalLM:
     def get_path_to_vocabulary_json(self) -> str:
         file_name = self._tokenizer.vocab_files_names.get("vocab_file", "vocab.json")
         return hf_hub_download(repo_id=self._model_id, filename=file_name)
-    
+
     # def get_merges and get_pretokenizer_regex
