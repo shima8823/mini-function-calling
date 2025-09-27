@@ -51,12 +51,16 @@ def encode(text: str, bpe_ranks: dict[tuple[str, str], int], token_to_id: dict[s
 		if not token:
 			return []
 		symbols = list(token)
+		# BPEなので隣接ペアを取得
 		pairs = get_pairs(symbols)
 		if not pairs:
 			return [token]
 		while True:
+
 			min_rank = None
 			best_pair = None
+			# rankが最小のペアを取得
+			# rank=学習時のそのステップで最頻だったペア
 			for pair in pairs:
 				rank = bpe_ranks.get(pair)
 				if rank is not None and (min_rank is None or rank < min_rank):
@@ -67,6 +71,7 @@ def encode(text: str, bpe_ranks: dict[tuple[str, str], int], token_to_id: dict[s
 			first, second = best_pair
 			new_symbols: list[str] = []
 			i = 0
+			# 最頻ペアを合わせて新しいsymbolsを作成し、圧縮していく
 			while i < len(symbols):
 				if i < len(symbols) - 1 and symbols[i] == first and symbols[i + 1] == second:
 					new_symbols.append(first + second)
@@ -80,15 +85,17 @@ def encode(text: str, bpe_ranks: dict[tuple[str, str], int], token_to_id: dict[s
 			pairs = get_pairs(symbols)
 		return symbols
 
-	# GPT-2 の正規表現でプレトークナイズ
-	gpt2_pattern = re.compile(r"(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\r\n\p{L}\p{N}]?\p{L}+|\p{N}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+")
-	# cl100k r"'(?i:[sdmt]|ll|ve|re)|[^\r\n\p{L}\p{N}]?+\p{L}++|\p{N}{1,3}+| ?[^\s\p{L}\p{N}]++[\r\n]*+|\s++$|\s*[\r\n]|\s+(?!\S)|\s"
-	# qwen3  r"(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\r\n\p{L}\p{N}]?\p{L}+|\p{N}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+"
-	# gpt2   r"'s|'t|'re|'ve|'m|'ll|'d| ?[\p{L}]+| ?[\p{N}]+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"
-	words = gpt2_pattern.findall(text)
+	# Qwen3の正規表現でプレトークナイズ
+	qwen3_pattern = re.compile(r"(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\r\n\p{L}\p{N}]?\p{L}+|\p{N}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+")
+
+	words = qwen3_pattern.findall(text)
 	ids: list[int] = []
 	for word in words:
+		# 様々な文字列に対して、UTF-8にエンコードした後、byte_encoderでUnicodeに変換
+		# なぜbyte_encoderでUnicodeに変換するかというと、merges.txtにはUTF-8のバイト列で書かれているため
 		encoded = "".join(byte_encoder[b] for b in word.encode("utf-8"))
+		print("encoded", encoded)
+		# BPEで圧縮し、qwen3の語彙(str → id)に変換
 		for piece in bpe(encoded):
 			ids.append(token_to_id[piece])
 	return ids
@@ -100,17 +107,21 @@ def decode(tokens: list[int], id_to_token: dict[int, str], byte_decoder: dict[st
 
 
 def main() -> None:
-	# 入力データ
+	# 入力、出力データのパスを設定
 	base_path = Path(__file__).parent.parent
 	functions_path = base_path / "input" / "functions_definition.json"
 	prompts_path = base_path / "input" / "function_calling_tests.json"
 	results_dir = base_path / "output"
 	results_dir.mkdir(exist_ok=True)
 
+	# functionの定義、プロンプトを読み込む
 	function_definitions = load_function_definitions(functions_path)
 	prompts = load_prompts(prompts_path)
 
+	# BPEのpair→rankを読み込む
 	bpe_ranks = load_merges_to_ranks(base_path / "input" / "merges.txt")
+
+	# byte→Unicode写像（可逆）を作成
 	byte_encoder, byte_decoder = _build_byte_encoder_decoder()
 
 	# 関数定義を文字列に整形
@@ -118,6 +129,7 @@ def main() -> None:
 		args_spec = ", ".join(f"{name}: {defn.args_types.get(name, 'any')}" for name in defn.args_names)
 		return f"{defn.fn_name}({args_spec}) -> {defn.return_type}"
 
+	# 関数定義を文字列に整形
 	functions_catalog = "\n".join(format_fn(d) for d in function_definitions)
 
 	# モデルを初期化
