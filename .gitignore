@@ -1,7 +1,8 @@
-project.md
 llm_sdk
 input
 output
+AGENTS.md
+notes
 
 # uv関連
 uv.lock
