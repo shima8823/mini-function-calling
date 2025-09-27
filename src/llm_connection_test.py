@@ -49,6 +49,13 @@ def test_small_llm_model() -> bool:
             print("\n5️⃣ 語彙ファイルのパスを取得...")
             vocab_path = model.get_path_to_vocabulary_json()
             print(f"✅ 語彙ファイルパス: {vocab_path}")
+            # 語彙ファイルを読み込む
+            import json
+
+            with open(vocab_path, "r") as f:
+                vocab = json.load(f)
+            print(f"✅ 語彙ファイル読み込み完了: {len(vocab)} 個のトークン")
+            print(f"   最初の5個のトークン: {list(vocab.keys())[:5]}")
 
             # 6. デコードテスト
             print("\n6️⃣ デコードテスト...")
@@ -82,4 +89,3 @@ def test_small_llm_model() -> bool:
 if __name__ == "__main__":
     ok = test_small_llm_model()
     print("\n✅ テストが正常に完了しました" if ok else "\n❌ テストが失敗しました")
-
