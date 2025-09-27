@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 
 from llm_sdk import Small_LLM_Model
-from .inputs import FunctionDefinition, PromptItem, load_function_definitions, load_prompts
+from .inputs import (
+    FunctionDefinition,
+    PromptItem,
+    load_function_definitions,
+    load_prompts,
+)
 import json
 from pathlib import Path
 import regex as re
+
 
 def _bytes_to_unicode_mapping() -> dict[int, str]:
     """GPT-2 と同等の可逆バイト→Unicodeマップを生成する。"""
@@ -25,12 +31,15 @@ def _build_byte_encoder_decoder() -> tuple[dict[int, str], dict[str, int]]:
     byte_decoder = {v: k for k, v in byte_encoder.items()}
     return byte_encoder, byte_decoder
 
+
 def load_merges_to_ranks(merges_path: str) -> dict[tuple[str, str], int]:
     """merges.txt を BPE の pair→rank に変換する。
 
     各行は "A B" の2トークン（byte-level unicode 記号列）。
     """
-    lines = [ln.strip() for ln in Path(merges_path).read_text(encoding="utf-8").splitlines()]
+    lines = [
+        ln.strip() for ln in Path(merges_path).read_text(encoding="utf-8").splitlines()
+    ]
     pairs = [ln for ln in lines if ln and not ln.startswith("#")]  # 空行・コメント除外
     bpe_ranks: dict[tuple[str, str], int] = {}
     for i, ln in enumerate(pairs):
@@ -38,7 +47,13 @@ def load_merges_to_ranks(merges_path: str) -> dict[tuple[str, str], int]:
         bpe_ranks[(a, b)] = i
     return bpe_ranks
 
-def encode(text: str, bpe_ranks: dict[tuple[str, str], int], token_to_id: dict[str, int], byte_encoder: dict[int, str]) -> list[int]:
+
+def encode(
+    text: str,
+    bpe_ranks: dict[tuple[str, str], int],
+    token_to_id: dict[str, int],
+    byte_encoder: dict[int, str],
+) -> list[int]:
     def get_pairs(symbols: list[str]) -> set[tuple[str, str]]:
         pairs: set[tuple[str, str]] = set()
         prev = symbols[0]
@@ -56,7 +71,6 @@ def encode(text: str, bpe_ranks: dict[tuple[str, str], int], token_to_id: dict[s
         if not pairs:
             return [token]
         while True:
-
             min_rank = None
             best_pair = None
             # rankが最小のペアを取得
@@ -73,7 +87,11 @@ def encode(text: str, bpe_ranks: dict[tuple[str, str], int], token_to_id: dict[s
             i = 0
             # 最頻ペアを合わせて新しいsymbolsを作成し、圧縮していく
             while i < len(symbols):
-                if i < len(symbols) - 1 and symbols[i] == first and symbols[i + 1] == second:
+                if (
+                    i < len(symbols) - 1
+                    and symbols[i] == first
+                    and symbols[i + 1] == second
+                ):
                     new_symbols.append(first + second)
                     i += 2
                     continue
@@ -86,7 +104,9 @@ def encode(text: str, bpe_ranks: dict[tuple[str, str], int], token_to_id: dict[s
         return symbols
 
     # Qwen3の正規表現でプレトークナイズ
-    qwen3_pattern = re.compile(r"(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\r\n\p{L}\p{N}]?\p{L}+|\p{N}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+")
+    qwen3_pattern = re.compile(
+        r"(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\r\n\p{L}\p{N}]?\p{L}+|\p{N}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+"
+    )
 
     words = qwen3_pattern.findall(text)
     ids: list[int] = []
@@ -99,7 +119,10 @@ def encode(text: str, bpe_ranks: dict[tuple[str, str], int], token_to_id: dict[s
             ids.append(token_to_id[piece])
     return ids
 
-def decode(tokens: list[int], id_to_token: dict[int, str], byte_decoder: dict[str, int]) -> str:
+
+def decode(
+    tokens: list[int], id_to_token: dict[int, str], byte_decoder: dict[str, int]
+) -> str:
     text = "".join(id_to_token[t] for t in tokens)
     byte_values = [byte_decoder[ch] for ch in text]
     return bytes(byte_values).decode("utf-8", errors="replace")
@@ -125,7 +148,9 @@ def main() -> None:
 
     # 関数定義を文字列に整形
     def format_fn(defn: FunctionDefinition) -> str:
-        args_spec = ", ".join(f"{name}: {defn.args_types.get(name, 'any')}" for name in defn.args_names)
+        args_spec = ", ".join(
+            f"{name}: {defn.args_types.get(name, 'any')}" for name in defn.args_names
+        )
         return f"{defn.fn_name}({args_spec}) -> {defn.return_type}"
 
     # 関数定義を文字列に整形
@@ -158,13 +183,14 @@ def main() -> None:
             "You are a function selector. Read the available functions and the question, then respond with exactly ONE JSON object.\n"
             "- The output MUST be valid JSON with exactly two top-level keys: fn_name (string) and args (object).\n"
             "- args must ALWAYS be a JSON object (even for a single argument). Use key-value pairs with the exact argument names.\n"
-            "Available functions:\n" + functions_catalog + "\n\n" +
-            "Question:\n" + item.prompt + "\n\n"
+            "Available functions:\n"
+            + functions_catalog
+            + "\n\n"
+            + "Question:\n"
+            + item.prompt
+            + "\n\n"
         )
-        assistant_prompt = (
-            "role: assistant \n" +
-            "json content: "
-        )
+        assistant_prompt = "role: assistant \n" + "json content: "
         prompt_text = user_prompt + assistant_prompt
 
         print("生成されたプロンプト:")
@@ -208,7 +234,7 @@ def main() -> None:
                 elif char == "}":
                     resource -= 1
             if json_start_flag and resource == 0:
-                print(f"生成完了 ({i+1} トークン)")
+                print(f"生成完了 ({i + 1} トークン)")
                 break
 
         # デコードしてJSONを抽出
@@ -222,7 +248,11 @@ def main() -> None:
         try:
             start = generated_text.find("{")
             end = generated_text.rfind("}")
-            payload = generated_text[start : end + 1] if start != -1 and end != -1 and end > start else "{}"
+            payload = (
+                generated_text[start : end + 1]
+                if start != -1 and end != -1 and end > start
+                else "{}"
+            )
             json_obj = json.loads(payload)
             print("\n抽出されたJSON:")
             print(json.dumps(json_obj, ensure_ascii=False, indent=2))
@@ -236,11 +266,13 @@ def main() -> None:
         if not isinstance(args, dict):
             args = {}
 
-        results.append({
-            "prompt": item.prompt,
-            "fn_name": fn_name,
-            "args": args,
-        })
+        results.append(
+            {
+                "prompt": item.prompt,
+                "fn_name": fn_name,
+                "args": args,
+            }
+        )
 
     print("\n全プロンプトの処理が完了しました")
 
@@ -251,6 +283,7 @@ def main() -> None:
     print(f"\n結果を保存しました: {output_path}")
 
     return
+
 
 if __name__ == "__main__":
     main()
