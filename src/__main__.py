@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from llm_sdk import Small_LLM_Model
 from .inputs import (
     FunctionDefinition,
