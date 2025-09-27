@@ -1,4 +1,4 @@
-from llm_sdk import Small_LLM_Model
+from llm_sdk import LightweightCausalLM
 from .inputs import (
     FunctionDefinition,
     load_function_definitions,
@@ -154,8 +154,8 @@ def main() -> None:
     functions_catalog = "\n".join(format_fn(d) for d in function_definitions)
 
     # モデルを初期化
-    model = Small_LLM_Model(
-        model_name="Qwen/Qwen3-0.6B",
+    model = LightweightCausalLM(
+        model_id="Qwen/Qwen3-0.6B",
         device="cpu",
         dtype=None,
     )

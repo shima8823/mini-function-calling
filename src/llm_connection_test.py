@@ -4,7 +4,7 @@ Small_LLM_Model の接続テスト用モジュール。
 本番コードとは分離しておき、必要に応じて手動実行・呼び出しできるようにします。
 """
 
-from llm_sdk import Small_LLM_Model
+from llm_sdk import LightweightCausalLM
 
 
 def test_small_llm_model() -> bool:
@@ -21,8 +21,8 @@ def test_small_llm_model() -> bool:
         # 1. モデルの初期化
         print("\n1️⃣ モデルの初期化中...")
         try:
-            model = Small_LLM_Model(
-                model_name="Qwen/Qwen3-0.6B",
+            model = LightweightCausalLM(
+                model_id="Qwen/Qwen3-0.6B",
                 device="cpu",
                 dtype=None,
             )
