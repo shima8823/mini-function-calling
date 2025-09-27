@@ -1,7 +1,6 @@
 from llm_sdk import Small_LLM_Model
 from .inputs import (
     FunctionDefinition,
-    PromptItem,
     load_function_definitions,
     load_prompts,
 )
@@ -196,14 +195,8 @@ def main() -> None:
 
         # 内部BPEでエンコード
         encoded = encode(prompt_text, bpe_ranks, token_to_id, byte_encoder)
-        # encoded = model._encode(prompt_text)
         print("encoded", encoded)
         input_ids = encoded
-        # input_ids = encoded.tolist()[0]
-        # decode debug print
-        # decoded_text = model._decode(input_ids)
-        # decoded_text = decode(input_ids, id_to_token, byte_decoder)
-        # print("decoded_text", decoded_text)
         start_len = len(input_ids)
 
         print("\nトークン生成中...")
@@ -222,7 +215,6 @@ def main() -> None:
             # テキストを生成して逐次検索。json_start_flag が真かつ resource({}) が 0 になったら停止
             # TODO: O(n) なので手法を改善する
             generated_text = decode(input_ids[next_start:], id_to_token, byte_decoder)
-            # generated_text = model._decode(input_ids[next_start:])
             next_start += 1
             print("generated_text", generated_text)
             for char in generated_text:
